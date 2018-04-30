@@ -1,16 +1,22 @@
 # go-powershell
 
-![License](https://img.shields.io/github/license/gorillalabs/go-powershell.svg)
-[![GoDoc](https://godoc.org/github.com/gorillalabs/go-powershell?status.svg)](https://godoc.org/github.com/gorillalabs/go-powershell)
+This is not an official Google product.
+
+![License](https://img.shields.io/github/license/inosvaruag/go-powershell.svg)
+[![GoDoc](https://godoc.org/github.com/inosvaruag/go-powershell?status.svg)](https://godoc.org/github.com/inosvaruag/go-powershell)
 
 This package is inspired by [jPowerShell](https://github.com/profesorfalken/jPowerShell)
 and allows one to run and remote-control a PowerShell session. Use this if you
-don't have a static script that you want to execute, bur rather run dynamic
+don't have a static script that you want to execute, but rather run dynamic
 commands.
+
+This fork from
+[gorillalabs/go-powershell](https://github.com/gorillalabs/go-powershell) aims
+to add performance and reliability improvements to the package.
 
 ## Installation
 
-    go get github.com/gorillalabs/go-powershell
+    go get github.com/inosvaruag/go-powershell
 
 ## Usage
 
@@ -24,8 +30,8 @@ package main
 import (
 	"fmt"
 
-	ps "github.com/gorillalabs/go-powershell"
-	"github.com/gorillalabs/go-powershell/backend"
+	ps "github.com/inosvaruag/go-powershell"
+	"github.com/inosvaruag/go-powershell/backend"
 )
 
 func main() {
@@ -62,9 +68,9 @@ package main
 import (
 	"fmt"
 
-	ps "github.com/gorillalabs/go-powershell"
-	"github.com/gorillalabs/go-powershell/backend"
-	"github.com/gorillalabs/go-powershell/middleware"
+	ps "github.com/inosvaruag/go-powershell"
+	"github.com/inosvaruag/go-powershell/backend"
+	"github.com/inosvaruag/go-powershell/middleware"
 )
 
 func main() {
