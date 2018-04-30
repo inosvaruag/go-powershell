@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"io"
 	"strings"
-	"sync"
 
+	"github.com/google/martian"
 	"github.com/inosvaruag/go-powershell/backend"
 	"github.com/inosvaruag/go-powershell/utils"
 	"github.com/pkg/errors"
@@ -38,7 +38,7 @@ func New(backend backend.Starter) (Shell, error) {
 
 func (s *shell) Execute(cmd string) (string, string, error) {
 	if s.handle == nil {
-		return "", "", errors.Wrap(errors.New(cmd), "Cannot execute commands on closed shells.")
+		return "", "", errors.Wrap(errors.New(cmd), "cannot execute commands on closed shells.")
 	}
 
 	outBoundary := createBoundary()
@@ -49,20 +49,30 @@ func (s *shell) Execute(cmd string) (string, string, error) {
 
 	_, err := s.stdin.Write([]byte(full))
 	if err != nil {
-		return "", "", errors.Wrap(errors.Wrap(err, cmd), "Could not send PowerShell command")
+		return "", "", errors.Wrap(errors.Wrap(err, cmd), "could not send PowerShell command")
 	}
 
 	// read stdout and stderr
 	sout := ""
 	serr := ""
 
-	waiter := &sync.WaitGroup{}
-	waiter.Add(2)
+	chErr := make(chan error)
+	go func() { chErr <- streamReader(s.stdout, outBoundary, &sout, "stdout") }()
+	go func() { chErr <- streamReader(s.stderr, errBoundary, &serr, "stderr") }()
 
-	go streamReader(s.stdout, outBoundary, &sout, waiter)
-	go streamReader(s.stderr, errBoundary, &serr, waiter)
+	mErr := martian.NewMultiError()
+	for i := 0; i < 2; i++ {
+		select {
+		case stdErr := <-chErr:
+			if stdErr != nil {
+				mErr.Add(stdErr)
+			}
+		}
+	}
 
-	waiter.Wait()
+	if !mErr.Empty() {
+		return sout, serr, errors.Wrap(errors.Wrap(mErr, cmd), "could not read from std stream")
+	}
 
 	if len(serr) > 0 {
 		return sout, serr, errors.Wrap(errors.New(cmd), serr)
@@ -89,7 +99,7 @@ func (s *shell) Exit() {
 	s.stderr = nil
 }
 
-func streamReader(stream io.Reader, boundary string, buffer *string, signal *sync.WaitGroup) error {
+func streamReader(stream io.Reader, boundary string, buffer *string, streamName string) error {
 	// read all output until we have found our boundary token
 	output := ""
 	bufsize := 64
@@ -99,6 +109,7 @@ func streamReader(stream io.Reader, boundary string, buffer *string, signal *syn
 		buf := make([]byte, bufsize)
 		read, err := stream.Read(buf)
 		if err != nil {
+			errors.Wrapf(err, "cannot read from %v", streamName)
 			return err
 		}
 
@@ -110,8 +121,6 @@ func streamReader(stream io.Reader, boundary string, buffer *string, signal *syn
 	}
 
 	*buffer = strings.TrimSuffix(output, marker)
-	signal.Done()
-
 	return nil
 }
 
