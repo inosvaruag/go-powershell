@@ -3,9 +3,9 @@
 package powershell
 
 import (
+	"bytes"
 	"fmt"
 	"io"
-	"strings"
 
 	"github.com/google/martian"
 	"github.com/inosvaruag/go-powershell/backend"
@@ -99,28 +99,22 @@ func (s *shell) Exit() {
 	s.stderr = nil
 }
 
+// streamReader reads and returns the stream up to and excluding boundary
 func streamReader(stream io.Reader, boundary string, buffer *string, streamName string) error {
-	// read all output until we have found our boundary token
-	output := ""
-	bufsize := 64
-	marker := boundary + newline
+	var buf bytes.Buffer
+	marker := []byte(boundary + newline)
 
 	for {
-		buf := make([]byte, bufsize)
-		read, err := stream.Read(buf)
-		if err != nil {
-			errors.Wrapf(err, "cannot read from %v", streamName)
-			return err
+		if _, err := buf.ReadFrom(stream); err != nil {
+			return errors.Wrapf(err, "cannot read from %v", streamName)
 		}
 
-		output = output + string(buf[:read])
-
-		if strings.HasSuffix(output, marker) {
+		if bytes.HasSuffix(buf.Bytes(), marker) {
 			break
 		}
 	}
 
-	*buffer = strings.TrimSuffix(output, marker)
+	*buffer = string(bytes.TrimSuffix(buf.Bytes(), marker))
 	return nil
 }
 
