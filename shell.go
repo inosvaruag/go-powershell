@@ -13,7 +13,10 @@ import (
 	"github.com/pkg/errors"
 )
 
-const newline = "\r\n"
+const (
+	newline  = "\r\n"
+	readSize = 64
+)
 
 type Shell interface {
 	Execute(cmd string) (string, string, error)
@@ -100,21 +103,25 @@ func (s *shell) Exit() {
 }
 
 // streamReader reads and returns the stream up to and excluding boundary
-func streamReader(stream io.Reader, boundary string, buffer *string, streamName string) error {
+func streamReader(stream io.Reader, boundary string, output *string, streamName string) error {
 	var buf bytes.Buffer
+	buffer := make([]byte, readSize)
 	marker := []byte(boundary + newline)
 
+	mi := -1
 	for {
-		if _, err := buf.ReadFrom(stream); err != nil {
+		n, err := stream.Read(buffer)
+		if err != nil {
 			return errors.Wrapf(err, "cannot read from %v", streamName)
 		}
 
-		if bytes.HasSuffix(buf.Bytes(), marker) {
+		buf.Write(buffer[:n])
+		if mi = bytes.Index(buf.Bytes(), marker); mi >= 0 {
 			break
 		}
 	}
 
-	*buffer = string(bytes.TrimSuffix(buf.Bytes(), marker))
+	*output = string(buf.Bytes()[:mi])
 	return nil
 }
 
