@@ -5,8 +5,9 @@ import (
 	"testing"
 )
 
-// TestStreamReader tests that streamReader extracts the input stream before boundary correctly.
-func TestStreamReader(t *testing.T) {
+// TestStreamReaderExtractsInputBeforeBoundary tests that streamReader extracts the input stream
+// before boundary correctly.
+func TestStreamReaderExtractsInputBeforeBoundary(t *testing.T) {
 	stream := "abcdefghijklmnopqrstuvwxyz"
 	boundary := "Z"
 	totalStream := stream + boundary + newline
@@ -15,6 +16,34 @@ func TestStreamReader(t *testing.T) {
 	streamReader(reader, boundary, &output, "test")
 	if output != stream {
 		t.Errorf("stream not read correctly, got: %v, want: %v", output, stream)
+	}
+}
+
+// TestStreamReaderIgnoresCharsAfterBoundary ensures streamReader() ignores extraneous
+// characters after the boundary.
+func TestStreamReaderIgnoresCharsAfterBoundary(t *testing.T) {
+	stream := "abcdefghijklmnopqrstuvwxyz"
+	boundary := "Z"
+	extraChars := "garbage"
+	totalStream := stream + boundary + newline + extraChars
+	reader := strings.NewReader(totalStream)
+	output := ""
+	streamReader(reader, boundary, &output, "test")
+	if output != stream {
+		t.Errorf("stream not read correctly, got: %v, want: %v", output, stream)
+	}
+}
+
+// TestStreamReaderReturnsErrorIfEOFIsEncounteredBeforeBoundary ensures streamReader() returns
+// an error if EOF is returned before boundary is read
+func TestStreamReaderReturnsErrorIfEOFIsEncounteredBeforeBoundary(t *testing.T) {
+	stream := "abcdefghijklmnopqrstuvwxyz"
+	boundary := "Z"
+	reader := strings.NewReader(stream)
+	output := ""
+	err := streamReader(reader, boundary, &output, "test")
+	if err == nil {
+		t.Errorf("no error returned when EOF is reached before boundary, got: nil. want: non-nil")
 	}
 }
 
