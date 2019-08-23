@@ -32,7 +32,7 @@ func NewSession(upstream Middleware, config *SessionConfig) (Middleware, error) 
 	psConfName := "$goConf" + utils.CreateRandomString(8)
 	_, _, err := upstream.Execute(fmt.Sprintf("%s = New-PSSessionOption -IdleTimeout %s", psConfName, utils.QuoteArg(idleTimeoutMS)))
 	if err != nil {
-		return nil, errors.New("Could not convert password to secure string")
+		return nil, errors.New("Could not create PSSession Option")
 	}
 	config.PSConfVar = psConfName
 
