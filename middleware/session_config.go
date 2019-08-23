@@ -23,6 +23,7 @@ type SessionConfig struct {
 	Credential            interface{}
 	Port                  int
 	UseSSL                bool
+	PSConfVar             interface{}
 }
 
 func NewSessionConfig() *SessionConfig {
@@ -63,6 +64,11 @@ func (c *SessionConfig) ToArgs() []string {
 
 	if c.UseSSL {
 		args = append(args, "-UseSSL")
+	}
+
+	if asserted, ok := c.PSConfVar.(string); ok {
+		args = append(args, "-SessionOption")
+		args = append(args, asserted) // do not quote, as it contains a variable name.
 	}
 
 	return args
